@@ -1,0 +1,1316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantum Noise & Error Modeling</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0a0e27;
+            color: #e0e6ff;
+            overflow-x: hidden;
+        }
+
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .wave-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+
+        .wave {
+            position: absolute;
+            width: 200%;
+            height: 100%;
+            opacity: 0.15;
+        }
+
+        .wave path {
+            fill: none;
+            stroke: url(#gradient);
+            stroke-width: 2;
+            animation: wave-animation 8s ease-in-out infinite;
+        }
+
+        .wave:nth-child(2) path {
+            animation-delay: -2s;
+            stroke: url(#gradient2);
+        }
+
+        .wave:nth-child(3) path {
+            animation-delay: -4s;
+            stroke: url(#gradient3);
+        }
+
+        @keyframes wave-animation {
+            0%, 100% {
+                d: path("M0,50 Q250,30 500,50 T1000,50 T1500,50 T2000,50");
+            }
+            50% {
+                d: path("M0,50 Q250,70 500,50 T1000,50 T1500,50 T2000,50");
+            }
+        }
+
+        .particles {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .particle {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            background: rgba(99, 179, 237, 0.6);
+            border-radius: 50%;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0) translateX(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100vh) translateX(50px);
+                opacity: 0;
+            }
+        }
+
+        .content {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            padding: 2rem;
+            max-width: 1200px;
+        }
+
+        .quantum-badge {
+            display: inline-block;
+            padding: 0.5rem 1.5rem;
+            background: rgba(99, 179, 237, 0.1);
+            border: 1px solid rgba(99, 179, 237, 0.3);
+            border-radius: 50px;
+            font-size: 0.9rem;
+            letter-spacing: 2px;
+            margin-bottom: 2rem;
+            animation: pulse 3s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                box-shadow: 0 0 20px rgba(99, 179, 237, 0.3);
+            }
+            50% {
+                box-shadow: 0 0 40px rgba(99, 179, 237, 0.6);
+            }
+        }
+
+        h1 {
+            font-size: clamp(2.5rem, 8vw, 5rem);
+            font-weight: 700;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, #63b3ed 0%, #a78bfa 50%, #ec4899 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            font-size: clamp(1.1rem, 3vw, 1.5rem);
+            color: #a0aec0;
+            margin-bottom: 3rem;
+            line-height: 1.6;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 1.5rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 1rem 2.5rem;
+            font-size: 1.1rem;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.6);
+        }
+
+        .btn-secondary {
+            background: rgba(99, 179, 237, 0.1);
+            color: #63b3ed;
+            border: 2px solid rgba(99, 179, 237, 0.5);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(99, 179, 237, 0.2);
+            border-color: #63b3ed;
+            transform: translateY(-3px);
+        }
+
+        .features {
+            padding: 6rem 2rem;
+            background: linear-gradient(180deg, #0a0e27 0%, #1a1f3a 100%);
+        }
+
+        .features-grid {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .feature-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(99, 179, 237, 0.2);
+            border-radius: 20px;
+            padding: 2.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+            border-color: rgba(99, 179, 237, 0.5);
+            box-shadow: 0 20px 40px rgba(99, 179, 237, 0.2);
+        }
+
+        .feature-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .feature-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: #e0e6ff;
+        }
+
+        .feature-card p {
+            color: #a0aec0;
+            line-height: 1.7;
+        }
+
+        .tech-stack {
+            padding: 6rem 2rem;
+            text-align: center;
+        }
+
+        .tech-stack h2 {
+            font-size: 2.5rem;
+            margin-bottom: 3rem;
+            background: linear-gradient(135deg, #63b3ed 0%, #a78bfa 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .tech-grid {
+            max-width: 800px;
+            margin: 0 auto;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            justify-content: center;
+        }
+
+        .tech-item {
+            padding: 1rem 2rem;
+            background: rgba(99, 179, 237, 0.1);
+            border: 1px solid rgba(99, 179, 237, 0.3);
+            border-radius: 50px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .tech-item:hover {
+            background: rgba(99, 179, 237, 0.2);
+            transform: scale(1.05);
+        }
+
+        @media (max-width: 768px) {
+            .cta-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .btn {
+                width: 100%;
+                max-width: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="hero">
+        <div class="wave-container">
+            <svg class="wave" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2000 100" preserveAspectRatio="none">
+                <defs>
+                    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+                    </linearGradient>
+                    <linearGradient id="gradient2" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" style="stop-color:#63b3ed;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#a78bfa;stop-opacity:1" />
+                    </linearGradient>
+                    <linearGradient id="gradient3" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" style="stop-color:#a78bfa;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#ec4899;stop-opacity:1" />
+                    </linearGradient>
+                </defs>
+                <path d="M0,50 Q250,30 500,50 T1000,50 T1500,50 T2000,50" />
+            </svg>
+            <svg class="wave" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2000 100" preserveAspectRatio="none">
+                <path d="M0,50 Q250,70 500,50 T1000,50 T1500,50 T2000,50" />
+            </svg>
+            <svg class="wave" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2000 100" preserveAspectRatio="none">
+                <path d="M0,50 Q250,50 500,50 T1000,50 T1500,50 T2000,50" />
+            </svg>
+        </div>
+
+        <div class="particles" id="particles"></div>
+
+        <div class="content">
+            <div class="quantum-badge">NISQ ERA RESEARCH</div>
+            <h1>Noise and Error Modeling in Quantum Circuits</h1>
+            <p class="subtitle">
+                Simulating, analyzing, and mitigating quantum noise to push the boundaries of near-term quantum computing
+            </p>
+            <div class="cta-buttons">
+                <a href="#features" class="btn btn-primary">Explore Research</a>
+                <a href="#tech" class="btn btn-secondary">View Framework</a>
+                <a href="esp32.html" class="btn btn-secondary">Project Overview</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="features" id="features">
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🔬</div>
+                <h3>Noise Channel Simulation</h3>
+                <p>Comprehensive modeling of depolarizing, amplitude damping, and phase damping noise using Qiskit's advanced noise frameworks.</p>
+                  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #0a0e27;
+      color: #ffffff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+
+    h1 {
+      color: #00d4ff;
+      margin-bottom: 10px;
+    }
+
+    h2 {
+      color: #00ffa5;
+      margin-bottom: 5px;
+    }
+
+    p {
+      max-width: 800px;
+      line-height: 1.6;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    canvas {
+      border: 2px solid #00d4ff;
+      border-radius: 8px;
+      margin-top: 20px;
+      background-color: #12183b;
+    }
+
+    .controls {
+      margin-top: 20px;
+      display: flex;
+      gap: 15px;
+    }
+
+    button {
+      padding: 10px 25px;
+      font-size: 16px;
+      font-weight: bold;
+      border: none;
+      border-radius: 8px;
+      background-color: #00d4ff;
+      color: #0a0e27;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    button:hover {
+      background-color: #00ffa5;
+    }
+
+    .measurements {
+      margin-top: 20px;
+      padding: 15px;
+      background-color: #12183b;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      width: 300px;
+      text-align: left;
+    }
+
+    .measurement-item {
+      margin-bottom: 10px;
+    }
+  </style>
+
+  <h1>Noise Channel Simulation with Measurement</h1>
+
+  <div class="section">
+  </div>
+
+  <div class="section">
+    <canvas id="noiseCanvas" width="800" height="250"></canvas>
+    <div class="controls">
+      <button onclick="startNoise()">Start Simulation</button>
+      <button onclick="stopNoise()">Stop Simulation</button>
+    </div>
+  </div>
+
+  <div class="measurements">
+    <h2>Measurements</h2>
+    <div class="measurement-item">Peak Amplitude: <span id="peak">0</span></div>
+    <div class="measurement-item">RMS Value: <span id="rms">0</span></div>
+    <div class="measurement-item">Average Value: <span id="avg">0</span></div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('noiseCanvas');
+    const ctx = canvas.getContext('2d');
+    const width = canvas.width;
+    const height = canvas.height;
+    let animationId;
+
+    const peakDisplay = document.getElementById('peak');
+    const rmsDisplay = document.getElementById('rms');
+    const avgDisplay = document.getElementById('avg');
+
+    function generateNoiseData(size = 200) {
+      const data = [];
+      for (let i = 0; i < size; i++) {
+        data.push(Math.random() * 2 - 1); // Random between -1 and 1
+      }
+      return data;
+    }
+
+    function calculateMeasurements(data) {
+      let peak = 0;
+      let sumSquares = 0;
+      let sum = 0;
+
+      data.forEach(val => {
+        if (Math.abs(val) > peak) peak = Math.abs(val);
+        sumSquares += val * val;
+        sum += val;
+      });
+
+      const rms = Math.sqrt(sumSquares / data.length);
+      const avg = sum / data.length;
+
+      return { peak, rms, avg };
+    }
+
+    function drawNoise() {
+      const data = generateNoiseData();
+      
+      // Draw waveform
+      ctx.fillStyle = '#12183b';
+      ctx.fillRect(0, 0, width, height);
+
+      ctx.beginPath();
+      for (let i = 0; i < data.length; i++) {
+        const x = (i / data.length) * width;
+        const y = (1 - (data[i] + 1) / 2) * height;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.strokeStyle = '#00ffab';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Calculate measurements
+      const measurements = calculateMeasurements(data);
+      peakDisplay.textContent = measurements.peak.toFixed(2);
+      rmsDisplay.textContent = measurements.rms.toFixed(2);
+      avgDisplay.textContent = measurements.avg.toFixed(2);
+
+      animationId = requestAnimationFrame(drawNoise);
+    }
+
+    function startNoise() {
+      if (!animationId) drawNoise();
+    }
+
+    function stopNoise() {
+      cancelAnimationFrame(animationId);
+      animationId = null;
+      ctx.fillStyle = '#12183b';
+      ctx.fillRect(0, 0, width, height);
+    }
+  </script>
+            </div><a href="noise.html">
+            <div class="feature-card" >
+                <div class="feature-icon">📊</div>
+                <h3>Fidelity Analysis</h3>
+                <p>Track circuit accuracy degradation across increasing depths, revealing practical limits for NISQ algorithms.</p>
+                
+            </div>
+            <br> 
+            <br>
+            <div class="feature-card">
+                <div class="feature-icon">⚡</div>
+                <h3>Error Mitigation</h3>
+                <p>Implement Zero-Noise Extrapolation, measurement error correction, and circuit folding to restore quantum advantage.</p>
+            </div>
+            </a>
+            <a href="algorithum.html">
+            <div class="feature-card">
+                <div class="feature-icon">🎯</div>
+                <h3>Algorithm Benchmarking</h3>
+                <p>Test QFT, Grover's, and VQE under realistic noise conditions to evaluate robustness and optimization strategies.</p>
+            </div>
+            </a>
+            <a href="Performance.html">
+            <div class="feature-card">
+                <div class="feature-icon">📈</div>
+                <h3>Performance Insights</h3>
+                <p>Visual analytics showing noise probability vs. accuracy, depth vs. fidelity, and mitigation effectiveness metrics.</p>
+            </div>
+            </a>
+            <a href="Hardware Optimization.html">
+            <div class="feature-card">
+                <div class="feature-icon">🔧</div>
+                <h3>Hardware Optimization</h3>
+                <p>Inform better quantum hardware design decisions and circuit compilation strategies based on noise characteristics.</p>
+            </div>
+            </a>
+        </div>
+    </div>
+    <style>
+  :root{
+    --bg:#071022; --card:#0f1724; --muted:rgba(255,255,255,0.7);
+    --accent:#6ee7b7; --glass:rgba(255,255,255,0.03);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Inter,ui-sans-serif,system-ui,Segoe UI,Roboto,Arial;background:linear-gradient(180deg,#041028,#07102a);color:#e6eef6;padding:18px}
+  .container{max-width:1200px;margin:0 auto}
+  header{display:flex;align-items:center;justify-content:space-between;gap:16px}
+  h1{font-size:20px;margin:0}
+  p.lead{margin:0;color:var(--muted);font-size:13px}
+  .grid{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-top:16px}
+  .card{background:linear-gradient(180deg,var(--card),#071225);border-radius:12px;padding:12px;box-shadow:0 8px 30px rgba(2,6,23,0.6)}
+  canvas{width:100%;height:180px;border-radius:8px;background:linear-gradient(180deg,#041026,#07102a);display:block}
+  .small{font-size:13px;color:var(--muted)}
+  .controls{display:flex;flex-direction:column;gap:10px}
+  label{font-size:13px;color:var(--muted);display:block;margin-bottom:6px}
+  input[type=range]{width:100%}
+  select, button, input[type=number]{padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:#e6eef6}
+  .btn{cursor:pointer}
+  .btn.primary{background:linear-gradient(90deg,var(--accent),#3dd9b0);color:#012;border:none}
+  .row{display:flex;gap:8px;align-items:center}
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  table{width:100%;border-collapse:collapse}
+  th,td{padding:6px;border-bottom:1px dashed rgba(255,255,255,0.03);font-size:13px}
+  pre{margin:0;color:var(--muted);font-size:12px;white-space:pre-wrap}
+  footer{margin-top:12px;color:var(--muted);font-size:12px}
+  @media (max-width:980px){.grid{grid-template-columns:1fr}.top-canvases{display:grid;grid-template-columns:1fr;gap:8px}}
+</style>
+
+<div class="container">
+  <header>
+    <div>
+      <h1>Quantum-Inspired Wave Noise Visualizer</h1>
+      <p class="lead">Demonstrates noise models + measurement calibration + ZNE + PEC — all in browser.</p>
+    </div>
+    <div class="small">Demo • Single file</div>
+  </header>
+
+  <div class="grid">
+    <!-- Left: Visualization -->
+    <div>
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div class="small">Wave Panels</div>
+          <div class="row">
+            <button id="snapshotBtn" class="btn">Download Snapshot</button>
+            <button id="resetBtn" class="btn">Reset</button>
+          </div>
+        </div>
+        <div style="height:10px"></div>
+        <div class="top-canvases">
+          <div style="margin-bottom:8px">
+            <div class="small" style="margin-bottom:6px">Clean (Reference)</div>
+            <canvas id="cleanCanvas"></canvas>
+          </div>
+          <div style="margin-bottom:8px">
+            <div class="small" style="margin-bottom:6px">Noisy (Live)</div>
+            <canvas id="noisyCanvas"></canvas>
+          </div>
+          <div>
+            <div class="small" style="margin-bottom:6px">Corrected (After Mitigation)</div>
+            <canvas id="correctedCanvas"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div style="height:12px"></div>
+
+      <div class="card">
+        <div class="small" style="margin-bottom:8px">Metrics & Plots</div>
+        <div class="cols" style="gap:12px">
+          <div>
+            <table>
+              <thead><tr><th>Metric</th><th>Clean</th><th>Noisy</th><th>Corrected</th></tr></thead>
+              <tbody id="metricsTable">
+                <tr><td>RMS</td><td id="m_clean_rms">-</td><td id="m_noisy_rms">-</td><td id="m_corr_rms">-</td></tr>
+                <tr><td>MAE</td><td id="m_clean_mae">-</td><td id="m_noisy_mae">-</td><td id="m_corr_mae">-</td></tr>
+                <tr><td>Improvement %</td><td colspan="3" id="m_improve">-</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div>
+            <div class="small">ZNE: metric vs noise-scale</div>
+            <canvas id="zneChart" style="height:140px"></canvas>
+            <div style="height:8px"></div>
+            <pre id="log" style="height:60px;overflow:auto"></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Controls -->
+    <div class="card controls">
+      <div>
+        <label>Wave Type</label>
+        <select id="modeSelect">
+          <option value="sine">Sine</option>
+          <option value="cos">Cosine</option>
+          <option value="noise">Pseudo-Noise</option>
+          <option value="mic">Microphone</option>
+        </select>
+      </div>
+
+      <div>
+        <label>Amplitude <span id="ampLabel">0.7</span></label>
+        <input type="range" id="amp" min="0" max="1.5" step="0.01" value="0.7">
+      </div>
+
+      <div>
+        <label>Frequency (Hz) <span id="freqLabel">2.0</span></label>
+        <input type="range" id="freq" min="0.2" max="8" step="0.01" value="2">
+      </div>
+
+      <div>
+        <label>Speed <span id="speedLabel">1.0</span>x</label>
+        <input type="range" id="speed" min="0.1" max="3" step="0.01" value="1">
+      </div>
+
+      <hr style="border:none;border-top:1px solid rgba(255,255,255,0.04)">
+
+      <div class="small" style="margin-bottom:6px">Noise Engine</div>
+
+      <div>
+        <label>Gaussian Sigma <span id="sigmaLabel">0.02</span></label>
+        <input type="range" id="sigma" min="0" max="0.2" step="0.005" value="0.02">
+      </div>
+
+      <div>
+        <label>Decoherence T2 (larger = slower decay) <span id="t2Label">10</span></label>
+        <input type="range" id="t2" min="1" max="60" step="1" value="10">
+      </div>
+
+      <div>
+        <label>Phase Error Strength <span id="phaseLabel">0.02</span></label>
+        <input type="range" id="phaseErr" min="0" max="0.5" step="0.005" value="0.02">
+      </div>
+
+      <div>
+        <label>Bias (offset) <span id="biasLabel">0.00</span></label>
+        <input type="range" id="bias" min="-0.5" max="0.5" step="0.01" value="0">
+      </div>
+
+      <div>
+        <label>Measurement Flip Rate <span id="flipLabel">0.02</span></label>
+        <input type="range" id="flipRate" min="0" max="0.5" step="0.005" value="0.02">
+      </div>
+
+      <div style="display:flex;gap:8px;margin-top:6px">
+        <button id="applyNoiseBtn" class="btn">Apply Noise</button>
+        <button id="toggleMic" class="btn">Start Mic</button>
+      </div>
+
+      <hr style="border:none;border-top:1px solid rgba(255,255,255,0.04)">
+
+      <div class="small" style="margin-bottom:6px">Calibration (Measurement Error)</div>
+      <div style="display:flex;gap:8px">
+        <button id="calibrateBtn" class="btn">Run Calibration</button>
+        <button id="showMatBtn" class="btn">Show Matrix</button>
+      </div>
+      <div id="matrixArea" style="margin-top:8px;display:none">
+        <pre id="matrixPre"></pre>
+      </div>
+
+      <hr style="border:none;border-top:1px solid rgba(255,255,255,0.04)">
+
+      <div class="small" style="margin-bottom:6px">Zero-Noise Extrapolation (ZNE)</div>
+      <div>
+        <label>Noise Scales (comma separated)</label>
+        <input id="zneScales" type="text" value="1,2,3" />
+      </div>
+      <div style="display:flex;gap:8px;margin-top:6px">
+        <button id="runZneBtn" class="btn">Run ZNE</button>
+        <button id="applyZneBtn" class="btn">Apply ZNE</button>
+      </div>
+
+      <hr style="border:none;border-top:1px solid rgba(255,255,255,0.04)">
+
+      <div class="small" style="margin-bottom:6px">Probabilistic Error Cancellation (PEC)</div>
+      <div>
+        <label>Num Trials <span id="pecTrialsLabel">30</span></label>
+        <input id="pecTrials" type="range" min="2" max="200" value="30" step="1">
+      </div>
+      <div style="display:flex;gap:8px;margin-top:6px">
+        <button id="runPecBtn" class="btn">Run PEC</button>
+      </div>
+
+      <footer>Tip: Use Calibration → ZNE → PEC in sequence for best results.</footer>
+    </div>
+  </div>
+
+  <div style="height:12px"></div>
+
+  <div style="display:flex;gap:12px">
+    <button id="exportData" class="btn">Export Samples (CSV)</button>
+    <button id="readmeBtn" class="btn">README (Quick)</button>
+  </div>
+
+</div>
+
+<script>
+/* --------------------------
+   Utilities & Globals
+   -------------------------- */
+const SAMPLE_LEN = 1024;
+let devicePixelRatioCached = window.devicePixelRatio || 1;
+
+function makeArray(len, value=0){ return new Array(len).fill(value) }
+function gaussianRandom(){ // Box-Muller
+  let u1=0,u2=0;
+  while(u1===0) u1=Math.random();
+  while(u2===0) u2=Math.random();
+  return Math.sqrt(-2*Math.log(u1))*Math.cos(2*Math.PI*u2);
+}
+function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
+
+/* --------------------------
+   Canvas setup & resize
+   -------------------------- */
+const cleanCanvas = document.getElementById('cleanCanvas');
+const noisyCanvas = document.getElementById('noisyCanvas');
+const correctedCanvas = document.getElementById('correctedCanvas');
+const zneChart = document.getElementById('zneChart');
+
+function resizeCanvas(c){
+  const styleW = c.clientWidth;
+  const styleH = c.clientHeight;
+  c.width = styleW * devicePixelRatioCached;
+  c.height = styleH * devicePixelRatioCached;
+  const ctx = c.getContext('2d');
+  ctx.setTransform(devicePixelRatioCached,0,0,devicePixelRatioCached,0,0);
+}
+function resizeAll(){
+  [cleanCanvas,noisyCanvas,correctedCanvas,zneChart].forEach(resizeCanvas);
+}
+window.addEventListener('resize', ()=>{ resizeAll(); renderAll(); });
+resizeAll();
+
+/* --------------------------
+   Wave generator
+   -------------------------- */
+let params = {
+  amp: parseFloat(document.getElementById('amp').value),
+  freq: parseFloat(document.getElementById('freq').value),
+  speed: parseFloat(document.getElementById('speed').value),
+  mode: document.getElementById('modeSelect').value
+};
+function generateWave(tOffset=0, len=SAMPLE_LEN){
+  const arr = new Float32Array(len);
+  for(let i=0;i<len;i++){
+    let u = i / len;
+    let phase = (u * params.freq * 2*Math.PI) + (tOffset * params.speed);
+    let value = 0;
+    if(params.mode === 'sine') value = Math.sin(phase) * params.amp;
+    else if(params.mode === 'cos') value = Math.cos(phase) * params.amp;
+    else if(params.mode === 'noise') value = (gaussianRandom()*0.5 + Math.sin(phase)*0.2) * params.amp;
+    else value = Math.sin(phase) * params.amp;
+    arr[i] = value;
+  }
+  return Array.from(arr);
+}
+
+/* --------------------------
+   Noise Engine (Step 3)
+   -------------------------- */
+function applyGaussian(samples, sigma){
+  return samples.map(s => s + gaussianRandom()*sigma);
+}
+function applyBias(samples, bias){
+  return samples.map(s => s + bias);
+}
+function applyDecoherence(samples, T2){
+  // simple exponential decay across samples
+  return samples.map((s,i) => {
+    let t = i / samples.length * T2; // normalized time
+    let ampScale = Math.exp(-t / T2);
+    return s * ampScale;
+  });
+}
+function applyPhaseError(samples, phaseStrength){
+  // shift phase by small random amount per-sample
+  return samples.map((s,i) => {
+    // approximate by shifting index slightly and resampling
+    let shift = Math.floor((Math.random()-0.5) * phaseStrength * samples.length * 0.5);
+    let idx = clamp(i + shift, 0, samples.length-1);
+    return samples[idx];
+  });
+}
+function applyMeasurementFlip(samples, flipRate){
+  // simplistic flip: invert sample with probability flipRate
+  return samples.map(s => (Math.random() < flipRate) ? -s : s);
+}
+function corruptSamples(clean, noiseParams, scale=1.0){
+  let s = clean.slice();
+  // scale sigma and phase by scale when doing ZNE
+  if(noiseParams.phaseErr > 0) s = applyPhaseError(s, noiseParams.phaseErr * scale);
+  if(noiseParams.sigma > 0) s = applyGaussian(s, noiseParams.sigma * scale);
+  if(noiseParams.bias !== 0) s = applyBias(s, noiseParams.bias * scale);
+  if(noiseParams.t2 < 1000) s = applyDecoherence(s, noiseParams.t2); // t2 not scaled for ZNE typically
+  if(noiseParams.flipRate > 0) s = applyMeasurementFlip(s, noiseParams.flipRate * scale);
+  return s;
+}
+
+/* --------------------------
+   Visualizer
+   -------------------------- */
+function drawSamples(canvas, samples, color='rgba(110,231,183,0.95)'){
+  const ctx = canvas.getContext('2d');
+  const w = canvas.clientWidth;
+  const h = canvas.clientHeight;
+  ctx.clearRect(0,0,w,h);
+  // background subtle grid
+  ctx.fillStyle = 'transparent';
+  ctx.beginPath();
+  ctx.moveTo(0, h/2);
+  ctx.lineTo(w, h/2);
+  ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+  ctx.lineWidth = 0.5;
+  ctx.stroke();
+
+  ctx.beginPath();
+  for(let i=0;i<samples.length;i++){
+    let x = (i / (samples.length-1)) * w;
+    let y = (h/2) - (samples[i] * (h/2 - 6));
+    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  }
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = color;
+  ctx.stroke();
+}
+
+/* --------------------------
+   Metrics
+   -------------------------- */
+function computeMetrics(ref, target){
+  const n = Math.min(ref.length, target.length);
+  let sumSq=0, sumAbs=0;
+  for(let i=0;i<n;i++){
+    let d = ref[i]-target[i];
+    sumSq += d*d;
+    sumAbs += Math.abs(d);
+  }
+  return { rms: Math.sqrt(sumSq/n), mae: sumAbs/n };
+}
+function updateMetricTable(clean, noisy, corrected){
+  const c1 = computeMetrics(clean, clean);
+  const c2 = computeMetrics(clean, noisy);
+  const c3 = computeMetrics(clean, corrected);
+  document.getElementById('m_clean_rms').textContent = c1.rms.toFixed(4);
+  document.getElementById('m_noisy_rms').textContent = c2.rms.toFixed(4);
+  document.getElementById('m_corr_rms').textContent = c3.rms.toFixed(4);
+  document.getElementById('m_clean_mae').textContent = c1.mae.toFixed(4);
+  document.getElementById('m_noisy_mae').textContent = c2.mae.toFixed(4);
+  document.getElementById('m_corr_mae').textContent = c3.mae.toFixed(4);
+  const improvement = ((c2.rms - c3.rms) / (c2.rms || 1)) * 100;
+  document.getElementById('m_improve').textContent = improvement.toFixed(2) + ' % (RMS improvement)';
+}
+
+/* --------------------------
+   Calibration (Step 4)
+   -------------------------- */
+let calibrationMatrix = null;
+function runCalibration(cleanRef0, cleanRef1, noisy0samples, noisy1samples){
+  // we will threshold values to 0/1 by sign (simple 2-state)
+  function probObservedTrue(trueArr, noisyArr, observedSign){
+    let total = trueArr.length;
+    let count = 0;
+    for(let i=0;i<total;i++){
+      const obs = noisyArr[i] >= 0 ? 1 : 0;
+      if(obs === observedSign) count++;
+    }
+    return count/total;
+  }
+  // true 0 -> noisy0samples, true 1 -> noisy1samples
+  const p00 = probObservedTrue(cleanRef0, noisy0samples, 0); // P(obs=0|true=0)
+  const p10 = probObservedTrue(cleanRef0, noisy0samples, 1); // P(obs=1|true=0)
+  const p01 = probObservedTrue(cleanRef1, noisy1samples, 0); // P(obs=0|true=1)
+  const p11 = probObservedTrue(cleanRef1, noisy1samples, 1); // P(obs=1|true=1)
+  // matrix rows: obs=0 row, obs=1 row; columns: true=0, true=1
+  const C = [[p00, p01],[p10,p11]];
+  calibrationMatrix = C;
+  document.getElementById('matrixPre').textContent = JSON.stringify(C, null, 2);
+  log('Calibration matrix saved.');
+  return C;
+}
+function invert2x2(m){
+  const [[a,b],[c,d]] = m;
+  const det = a*d - b*c;
+  if(Math.abs(det) < 1e-9) return null;
+  const inv = [[d/det, -b/det],[-c/det, a/det]];
+  return inv;
+}
+function applyCalibrationToSamples(samples){
+  if(!calibrationMatrix) { log('No calibration available.'); return samples; }
+  const inv = invert2x2(calibrationMatrix);
+  if(!inv) { log('Calibration matrix singular'); return samples; }
+  // threshold each sample to 0/1, correct frequencies in small windows and reconstruct approximate amplitude
+  const corrected = samples.map((s, idx) => {
+    // form observed vector for this sample: [P(obs=0), P(obs=1)] approx by deterministic observation
+    const obsVec = (s >= 0) ? [0,1] : [1,0];
+    // solve for trueVec = inv * obsVec
+    const t0 = inv[0][0]*obsVec[0] + inv[0][1]*obsVec[1];
+    const t1 = inv[1][0]*obsVec[0] + inv[1][1]*obsVec[1];
+    // map back to amplitude: t1 - t0 roughly maps to sign/amp; simpler: use t1 - t0 scaled
+    const val = (t1 - t0) * Math.max(0.0001, Math.abs(s)); // keep magnitude context
+    return clamp(val, -2, 2);
+  });
+  return corrected;
+}
+
+/* --------------------------
+   ZNE (Step 5)
+   -------------------------- */
+function parseScales(input){
+  return input.split(',').map(x=>parseFloat(x.trim())).filter(x=>!isNaN(x) && x>0);
+}
+function runZNE(generateFn, noiseParams, scales){
+  const results = [];
+  for(let s of scales){
+    const clean = generateFn(0, SAMPLE_LEN);
+    const noisy = corruptSamples(clean, noiseParams, s);
+    const metric = computeMetrics(clean, noisy).rms;
+    results.push({scale:s, metric, noisy});
+  }
+  return results;
+}
+function linearFit(data){
+  // data: [{scale, metric}, ...]
+  const n = data.length;
+  let sumX=0,sumY=0,sumXY=0,sumXX=0;
+  for(let d of data){ sumX+=d.scale; sumY+=d.metric; sumXY+=d.scale*d.metric; sumXX+=d.scale*d.scale; }
+  const a = (n*sumXY - sumX*sumY) / (n*sumXX - sumX*sumX || 1);
+  const b = (sumY - a*sumX)/n;
+  return {a,b}; // metric = a*scale + b  => at scale=0, metric=b
+}
+let lastZneResult = null;
+function drawZneChart(data, est){
+  const ctx = zneChart.getContext('2d');
+  const w = zneChart.clientWidth, h = zneChart.clientHeight;
+  ctx.clearRect(0,0,w,h);
+  ctx.fillStyle = 'rgba(255,255,255,0.03)';
+  ctx.fillRect(0,0,w,h);
+  // draw axes
+  ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+  ctx.beginPath(); ctx.moveTo(40,h-30); ctx.lineTo(w-10,h-30); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(40,10); ctx.lineTo(40,h-30); ctx.stroke();
+  // compute scales
+  const xs = data.map(d=>d.scale);
+  const ys = data.map(d=>d.metric);
+  const minX = Math.min(...xs), maxX = Math.max(...xs);
+  const minY = Math.min(...ys), maxY = Math.max(...ys);
+  const mapX = x => 40 + ((x-minX)/(maxX-minX || 1)) * (w-60);
+  const mapY = y => (h-30) - ((y-minY)/(maxY-minY || 1)) * (h-50);
+  // plot points and lines
+  ctx.strokeStyle = 'rgba(110,231,183,0.9)'; ctx.lineWidth=2; ctx.beginPath();
+  data.forEach((d,i)=>{ const x=mapX(d.scale), y=mapY(d.metric); if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); ctx.fillStyle='white'; ctx.fillRect(x-2,y-2,4,4); });
+  ctx.stroke();
+  // show extrapolated point at 0
+  if(est!==null){
+    const x0 = 40; const y0 = mapY(est);
+    ctx.fillStyle='rgba(255,200,100,0.95)';
+    ctx.beginPath(); ctx.arc(x0,y0,5,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='var(--muted)'; ctx.fillText('zero-noise ≈ '+est.toFixed(4), x0+8,y0-6);
+  }
+}
+
+/* --------------------------
+   PEC (Step 6) - simple version
+   -------------------------- */
+function buildCorrectionOps(noiseParams){
+  // create simple inverse-ish ops
+  const ops = [];
+  ops.push(s => s - gaussianRandom()*noiseParams.sigma*0.5); // partial opposite gaussian
+  ops.push(s => (s - noiseParams.bias)); // remove bias
+  ops.push(s => s * 0.95); // shrink amplitude
+  ops.push(s => s * 1.05); // expand amplitude
+  ops.push(s => -s * 0.8); // partial flip
+  return ops;
+}
+function applyPECToSamples(noisySamples, noiseParams, numTrials=30){
+  const ops = buildCorrectionOps(noiseParams);
+  const weights = ops.map(()=>1/ops.length); // uniform
+  const out = new Array(noisySamples.length).fill(0);
+  for(let t=0;t<numTrials;t++){
+    // sample op
+    let r = Math.random(), sum=0, idx=0;
+    for(let i=0;i<weights.length;i++){ sum+=weights[i]; if(r<=sum){ idx=i; break; } }
+    const op = ops[idx];
+    for(let i=0;i<noisySamples.length;i++){
+      out[i] += op(noisySamples[i]);
+    }
+  }
+  return out.map(v => v / numTrials);
+}
+
+/* --------------------------
+   UI bindings & main loop
+   -------------------------- */
+const sigmaEl = document.getElementById('sigma');
+const t2El = document.getElementById('t2');
+const phaseEl = document.getElementById('phaseErr');
+const biasEl = document.getElementById('bias');
+const flipEl = document.getElementById('flipRate');
+
+function getNoiseParams(){
+  return {
+    sigma: parseFloat(sigmaEl.value),
+    t2: parseFloat(t2El.value),
+    phaseErr: parseFloat(phaseEl.value),
+    bias: parseFloat(biasEl.value),
+    flipRate: parseFloat(flipEl.value)
+  };
+}
+
+let state = {
+  clean: makeArray(SAMPLE_LEN,0),
+  noisy: makeArray(SAMPLE_LEN,0),
+  corrected: makeArray(SAMPLE_LEN,0),
+  time: 0,
+  runningMic:false,
+  micStream:null,
+  audioCtx:null,
+  analyzer:null,
+  audioData:null
+};
+
+function renderAll(){
+  drawSamples(cleanCanvas, state.clean, 'rgba(100,180,255,0.9)');
+  drawSamples(noisyCanvas, state.noisy, 'rgba(255,120,120,0.95)');
+  drawSamples(correctedCanvas, state.corrected, 'rgba(140,255,180,0.95)');
+  updateMetricTable(state.clean, state.noisy, state.corrected);
+}
+function step(){
+  // update params from UI
+  params.amp = parseFloat(document.getElementById('amp').value);
+  params.freq = parseFloat(document.getElementById('freq').value);
+  params.speed = parseFloat(document.getElementById('speed').value);
+  params.mode = document.getElementById('modeSelect').value;
+  // labels
+  document.getElementById('ampLabel').textContent = params.amp;
+  document.getElementById('freqLabel').textContent = params.freq;
+  document.getElementById('speedLabel').textContent = params.speed;
+  document.getElementById('sigmaLabel').textContent = parseFloat(sigmaEl.value);
+  document.getElementById('t2Label').textContent = parseFloat(t2El.value);
+  document.getElementById('phaseLabel').textContent = parseFloat(phaseEl.value);
+  document.getElementById('biasLabel').textContent = parseFloat(biasEl.value).toFixed(2);
+  document.getElementById('flipLabel').textContent = parseFloat(flipEl.value);
+  document.getElementById('pecTrialsLabel').textContent = document.getElementById('pecTrials').value;
+
+  // generate fresh clean samples each frame (phase advances)
+  state.time += 0.02;
+  state.clean = generateWave(state.time, SAMPLE_LEN);
+
+  // if mic mode, override clean from audio
+  if(params.mode === 'mic' && state.audioData){
+    // map audio byte values to -amp..amp
+    const audio = state.audioData;
+    const len = SAMPLE_LEN;
+    const arr = new Array(len);
+    for(let i=0;i<len;i++){
+      const j = Math.floor(i * audio.length / len);
+      arr[i] = ((audio[j] - 128) / 128) * params.amp;
+    }
+    state.clean = arr;
+  }
+
+  // apply noise
+  const noiseParams = getNoiseParams();
+  state.noisy = corruptSamples(state.clean, noiseParams, 1.0);
+
+  // apply selected correction pipeline (if calibration exists apply it, else copy)
+  state.corrected = state.noisy.slice(); // default identity
+  // If calibration exists, apply it
+  if(calibrationMatrix) state.corrected = applyCalibrationToSamples(state.noisy);
+  renderAll();
+  requestAnimationFrame(step);
+}
+requestAnimationFrame(step);
+
+/* --------------------------
+   Buttons & Interactions
+   -------------------------- */
+function log(msg){
+  const p = document.getElementById('log');
+  p.textContent = '['+ (new Date()).toLocaleTimeString() + '] ' + msg + '\\n' + p.textContent;
+}
+document.getElementById('applyNoiseBtn').addEventListener('click', ()=>{ state.noisy = corruptSamples(state.clean, getNoiseParams(), 1); state.corrected = state.noisy.slice(); renderAll(); log('Applied noise once.'); });
+
+document.getElementById('calibrateBtn').addEventListener('click', ()=>{
+  // Build simple calibration using all-zero and all-one synthetic patterns
+  const len = SAMPLE_LEN;
+  const clean0 = new Array(len).fill( -0.2 ); // negative amplitude as '0' state analog
+  const clean1 = new Array(len).fill( 0.8 );  // positive amplitude as '1' state analog
+  const noiseP = getNoiseParams();
+  // run multiple trials to aggregate
+  const trials = 200;
+  const noisy0 = [];
+  const noisy1 = [];
+  for(let t=0;t<trials;t++){
+    noisy0.push(...corruptSamples(clean0, noiseP, 1));
+    noisy1.push(...corruptSamples(clean1, noiseP, 1));
+  }
+  runCalibration(clean0, clean1, noisy0.slice(0,len), noisy1.slice(0,len));
+  document.getElementById('matrixArea').style.display = 'block';
+  renderAll();
+});
+
+document.getElementById('showMatBtn').addEventListener('click', ()=> {
+  document.getElementById('matrixArea').style.display = (document.getElementById('matrixArea').style.display === 'block') ? 'none':'block';
+});
+
+document.getElementById('runZneBtn').addEventListener('click', ()=>{
+  const input = document.getElementById('zneScales').value;
+  const scales = parseScales(input);
+  if(scales.length < 2) { alert('Enter at least two scales, e.g. 1,2,3'); return; }
+  const data = runZNE(generateWave, getNoiseParams(), scales);
+  const fit = linearFit(data);
+  const zeroNoise = fit.b;
+  lastZneResult = {data, fit, zeroNoise};
+  drawZneChart(data, zeroNoise);
+  log('ZNE run complete. zero-noise estimate (metric) = ' + zeroNoise.toFixed(4));
+});
+
+document.getElementById('applyZneBtn').addEventListener('click', ()=>{
+  if(!lastZneResult){ alert('Run ZNE first'); return; }
+  // For demo, replace corrected waveform amplitude by scaling toward zero-noise metric
+  const scaleTo = lastZneResult.zeroNoise;
+  // compute current metric and scale factor
+  const currentMetric = computeMetrics(state.clean, state.noisy).rms;
+  const factor = (scaleTo / (currentMetric || 1));
+  state.corrected = state.noisy.map(s => s * factor);
+  log('Applied ZNE scaling factor ' + factor.toFixed(4));
+  renderAll();
+});
+
+document.getElementById('runPecBtn').addEventListener('click', ()=>{
+  const trials = parseInt(document.getElementById('pecTrials').value);
+  const corrected = applyPECToSamples(state.noisy, getNoiseParams(), trials);
+  state.corrected = corrected;
+  log('PEC applied with ' + trials + ' trials.');
+  renderAll();
+});
+
+document.getElementById('snapshotBtn').addEventListener('click', ()=>{
+  // create combined image
+  const w = Math.max(cleanCanvas.clientWidth, noisyCanvas.clientWidth, correctedCanvas.clientWidth);
+  const h = cleanCanvas.clientHeight + noisyCanvas.clientHeight + correctedCanvas.clientHeight + 30;
+  const tmp = document.createElement('canvas'); tmp.width = w * devicePixelRatioCached; tmp.height = h * devicePixelRatioCached;
+  const tctx = tmp.getContext('2d'); tctx.scale(devicePixelRatioCached, devicePixelRatioCached);
+  // draw each canvas vertically
+  const pad = 10; let y = 0;
+  tctx.drawImage(cleanCanvas, 0, y); y += cleanCanvas.clientHeight + pad;
+  tctx.drawImage(noisyCanvas, 0, y); y += noisyCanvas.clientHeight + pad;
+  tctx.drawImage(correctedCanvas, 0, y);
+  const url = tmp.toDataURL('image/png');
+  const a = document.createElement('a'); a.href = url; a.download = 'wave_snapshot.png'; a.click();
+  log('Snapshot downloaded.');
+});
+
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  calibrationMatrix = null; lastZneResult = null; document.getElementById('matrixArea').style.display='none';
+  state.corrected = state.clean.slice(); state.noisy = state.clean.slice(); log('Reset project state.'); renderAll();
+});
+
+document.getElementById('exportData').addEventListener('click', ()=>{
+  const rows = [];
+  rows.push(['index','clean','noisy','corrected'].join(','));
+  for(let i=0;i<SAMPLE_LEN;i++){
+    rows.push([i, state.clean[i].toFixed(6), state.noisy[i].toFixed(6), state.corrected[i].toFixed(6)].join(','));
+  }
+  const csv = rows.join('\\n');
+  const blob = new Blob([csv], {type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'wave_samples.csv'; a.click(); URL.revokeObjectURL(url);
+  log('Exported samples CSV.');
+});
+
+document.getElementById('readmeBtn').addEventListener('click', ()=>{
+  alert('Quick README:\\n\\n- Use the sliders to change wave & noise parameters.\\n- Run Calibration to build confusion matrix.\\n- Run ZNE to estimate zero-noise metric.\\n- Run PEC for advanced correction.\\n- Use Snapshot and Export for results.');
+});
+
+/* --------------------------
+   Microphone (optional)
+   -------------------------- */
+document.getElementById('toggleMic').addEventListener('click', async ()=>{
+  if(!state.runningMic){
+    try{
+      const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+      state.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      state.analyzer = state.audioCtx.createAnalyser();
+      state.analyzer.fftSize = 2048;
+      const source = state.audioCtx.createMediaStreamSource(stream);
+      source.connect(state.analyzer);
+      state.audioData = new Uint8Array(state.analyzer.frequencyBinCount);
+      state.runningMic = true;
+      state.micStream = stream;
+      document.getElementById('toggleMic').textContent = 'Stop Mic';
+      // read loop
+      (function read(){
+        if(!state.runningMic) return;
+        state.analyzer.getByteTimeDomainData(state.audioData);
+        // expose audioData for main loop
+        state.audioData = state.audioData;
+        setTimeout(read, 50);
+      })();
+      log('Microphone started.');
+    }catch(e){ alert('Microphone permission denied or not available.'); }
+  } else {
+    // stop
+    if(state.micStream) state.micStream.getTracks().forEach(t=>t.stop());
+    if(state.audioCtx) state.audioCtx.close();
+    state.runningMic=false; state.micStream=null; state.audioData=null; document.getElementById('toggleMic').textContent='Start Mic';
+    log('Microphone stopped.');
+  }
+});
+
+/* --------------------------
+   Init small render
+   -------------------------- */
+state.clean = generateWave(0);
+state.noisy = corruptSamples(state.clean, getNoiseParams(), 1);
+state.corrected = state.noisy.slice();
+resizeAll();
+renderAll();
+
+</script>
+
+    <div class="tech-stack" id="tech">
+        <h2>Built With Quantum Precision</h2>
+        <div class="tech-grid">
+            <div class="tech-item">Qiskit</div>
+            <div class="tech-item">Python</div>
+            <div class="tech-item">NumPy</div>
+            <div class="tech-item">Matplotlib</div>
+            <div class="tech-item">Zero-Noise Extrapolation</div>
+            <div class="tech-item">Circuit Folding</div>
+            <div class="tech-item">Noise Models</div>
+            <div class="tech-item">Quantum Algorithms</div>
+        </div>
+    </div>
+
+    <script>
+        // Generate floating particles
+        const particlesContainer = document.getElementById('particles');
+        const particleCount = 50;
+
+        for (let i = 0; i < particleCount; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            particle.style.left = Math.random() * 100 + '%';
+            particle.style.animationDelay = Math.random() * 6 + 's';
+            particle.style.animationDuration = (Math.random() * 4 + 4) + 's';
+            particlesContainer.appendChild(particle);
+        }
+
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

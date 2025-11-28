@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quantum Performance Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  body { margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0a0e27; color: #fff; padding: 20px; display:flex; flex-direction:column; align-items:center;}
+  header { font-size:28px; font-weight:bold; color:#00d4ff; text-align:center; width:100%; background-color:#12183b; padding:15px 0; margin-bottom:20px;}
+  .module, .chart-container { width: 900px; background-color: #12183b; padding: 20px; margin-bottom: 20px; border-radius: 12px; box-shadow:0 3px 12px rgba(0,0,0,0.5);}
+  canvas { background-color: #0f1430; border-radius:10px; display:block; margin:10px auto;}
+  .controls { display:flex; gap:15px; flex-wrap:wrap; justify-content:center; margin-top:10px;}
+  input[type=range], button { padding:10px 20px; border:none; border-radius:8px; cursor:pointer;}
+  button { background-color:#00d4ff; color:#0a0e27; font-weight:bold; transition:0.3s;}
+  button:hover { background-color:#00ffa5;}
+  input[type=range] { width:150px; }
+  .measurements { display:flex; flex-wrap:wrap; justify-content:space-around; margin-top:15px; }
+  .measurement-item { background:#0f1430; padding:10px 15px; border-radius:6px; margin:5px; min-width:140px; text-align:center;}
+  .measurement-item span { font-weight:bold; color:#00ffa5; }
+</style>
+</head>
+<body>
+
+<header>Quantum Performance Dashboard</header>
+
+<!-- Noise Simulation -->
+<div class="module">
+  <h2>Noise Simulation</h2>
+  <canvas id="noiseCanvas" width="850" height="200"></canvas>
+  <div class="controls">
+    <button onclick="startNoise()">Start</button>
+    <button onclick="stopNoise()">Stop</button>
+    <label>Noise Level <input type="range" id="noiseLevel" min="0" max="1" step="0.01" value="0.1"></label>
+  </div>
+  <div class="measurements">
+    <div class="measurement-item">Peak: <span id="noisePeak">0</span></div>
+    <div class="measurement-item">RMS: <span id="noiseRMS">0</span></div>
+    <div class="measurement-item">Average: <span id="noiseAvg">0</span></div>
+  </div>
+</div>
+
+<!-- Fidelity Analysis -->
+<div class="module">
+  <h2>Fidelity Analysis</h2>
+  <canvas id="fidelityCanvas" width="850" height="200"></canvas>
+  <div class="controls">
+    <button onclick="startFidelity()">Start</button>
+    <button onclick="stopFidelity()">Stop</button>
+    <label>Frequency <input type="range" id="freq" min="1" max="50" value="5"></label>
+    <label>Noise Level <input type="range" id="fNoise" min="0" max="0.5" step="0.01" value="0.1"></label>
+  </div>
+  <div class="measurements">
+    <div class="measurement-item">Peak: <span id="fPeak">0</span></div>
+    <div class="measurement-item">RMS: <span id="fRMS">0</span></div>
+    <div class="measurement-item">SNR: <span id="fSNR">0</span></div>
+    <div class="measurement-item">THD: <span id="fTHD">0</span></div>
+    <div class="measurement-item">Power: <span id="fPower">0</span></div>
+  </div>
+</div>
+
+<!-- Error Mitigation -->
+<div class="module">
+  <h2>Error Mitigation</h2>
+  <canvas id="errorCanvas" width="850" height="200"></canvas>
+  <div class="controls">
+    <button onclick="startError()">Start</button>
+    <button onclick="stopError()">Stop</button>
+    <label>Error Level <input type="range" id="errorLevel" min="0" max="0.5" step="0.01" value="0.1"></label>
+  </div>
+  <div class="measurements">
+    <div class="measurement-item">Peak: <span id="ePeak">0</span></div>
+    <div class="measurement-item">RMS: <span id="eRMS">0</span></div>
+    <div class="measurement-item">Mitigation Effectiveness: <span id="eMitigation">0</span></div>
+  </div>
+</div>
+
+<!-- Performance Insights Charts -->
+<div class="chart-container">
+  <h2>Noise Probability vs Accuracy</h2>
+  <canvas id="noiseAccuracyChart"></canvas>
+</div>
+
+<div class="chart-container">
+  <h2>Circuit Depth vs Fidelity</h2>
+  <canvas id="depthFidelityChart"></canvas>
+</div>
+
+<div class="chart-container">
+  <h2>Error Mitigation Effectiveness</h2>
+  <canvas id="mitigationChart"></canvas>
+</div>
+
+<script>
+  /*** Shared helper functions ***/
+  function calcMetrics(data){
+    let peak=0,sum=0,sumSq=0;
+    data.forEach(v=>{ if(Math.abs(v)>peak) peak=Math.abs(v); sum+=v; sumSq+=v*v; });
+    return { peak: peak, rms: Math.sqrt(sumSq/data.length), avg: sum/data.length };
+  }
+
+  /*** Noise Simulation ***/
+  const noiseCanvas = document.getElementById('noiseCanvas'); const nCtx = noiseCanvas.getContext('2d'); let nAnim=null;
+  const nLevel=document.getElementById('noiseLevel');
+  const nPeak=document.getElementById('noisePeak'); const nRMS=document.getElementById('noiseRMS'); const nAvg=document.getElementById('noiseAvg');
+  let noiseMeasurement = {prob:0};
+
+  function generateNoise(size=200){
+    const lvl=parseFloat(nLevel.value); let data=[];
+    for(let i=0;i<size;i++){ data.push(Math.random()*2*lvl - lvl); }
+    return data;
+  }
+
+  function drawNoise(){
+    const data=generateNoise();
+    nCtx.fillStyle="#12183b"; nCtx.fillRect(0,0,noiseCanvas.width,noiseCanvas.height);
+    nCtx.beginPath(); data.forEach((v,i)=>{
+      const x=i/data.length*noiseCanvas.width;
+      const y=(1-(v+parseFloat(nLevel.value))/(2*parseFloat(nLevel.value)))*noiseCanvas.height;
+      i===0?nCtx.moveTo(x,y):nCtx.lineTo(x,y);
+    });
+    nCtx.strokeStyle="#00ffab"; nCtx.lineWidth=2; nCtx.stroke();
+    const m = calcMetrics(data);
+    nPeak.textContent=m.peak.toFixed(3); nRMS.textContent=m.rms.toFixed(3); nAvg.textContent=m.avg.toFixed(3);
+    noiseMeasurement.prob = m.rms; // use RMS as proxy for noise probability
+    nAnim=requestAnimationFrame(drawNoise); updatePerformanceCharts();
+  }
+
+  function startNoise(){ if(!nAnim) drawNoise(); }
+  function stopNoise(){ cancelAnimationFrame(nAnim); nAnim=null; nCtx.clearRect(0,0,noiseCanvas.width,noiseCanvas.height); }
+
+  /*** Fidelity Analysis ***/
+  const fCanvas = document.getElementById('fidelityCanvas'); const fCtx = fCanvas.getContext('2d'); let fAnim=null;
+  const fPeak=document.getElementById('fPeak'); const fRMS=document.getElementById('fRMS'); const fSNR=document.getElementById('fSNR'); const fTHD=document.getElementById('fTHD'); const fPower=document.getElementById('fPower');
+  const fNoise=document.getElementById('fNoise'); const freq=document.getElementById('freq');
+  let fidelityMeasurement = {fidelity:1};
+
+  function generateFidelity(size=200){
+    const freqVal=parseFloat(freq.value); const noiseVal=parseFloat(fNoise.value); let data=[];
+    for(let i=0;i<size;i++){
+      const t=i/size; data.push(Math.sin(2*Math.PI*freqVal*t) + (Math.random()*2-1)*noiseVal);
+    } return data;
+  }
+
+  function drawFidelity(){
+    const data = generateFidelity();
+    fCtx.fillStyle="#12183b"; fCtx.fillRect(0,0,fCanvas.width,fCanvas.height);
+    fCtx.beginPath(); data.forEach((v,i)=>{
+      const x=i/data.length*fCanvas.width;
+      const y=(1-(v+1)/2)*fCanvas.height;
+      i===0?fCtx.moveTo(x,y):fCtx.lineTo(x,y);
+    }); fCtx.strokeStyle="#00ffab"; fCtx.lineWidth=2; fCtx.stroke();
+    const m=calcMetrics(data); fPeak.textContent=m.peak.toFixed(3); fRMS.textContent=m.rms.toFixed(3);
+    const snr = 20*Math.log10(m.rms/(parseFloat(fNoise.value)+0.0001)); fSNR.textContent=snr.toFixed(2);
+    fTHD.textContent=(Math.random()*1.5).toFixed(2); fPower.textContent=(m.rms**2).toFixed(3);
+    fidelityMeasurement.fidelity = 1 - parseFloat(fNoise.value); // use for performance chart
+    fAnim=requestAnimationFrame(drawFidelity); updatePerformanceCharts();
+  }
+
+  function startFidelity(){ if(!fAnim) drawFidelity(); }
+  function stopFidelity(){ cancelAnimationFrame(fAnim); fAnim=null; fCtx.clearRect(0,0,fCanvas.width,fCanvas.height); }
+
+  /*** Error Mitigation ***/
+  const eCanvas = document.getElementById('errorCanvas'); const eCtx=eCanvas.getContext('2d'); let eAnim=null;
+  const ePeak=document.getElementById('ePeak'); const eRMS=document.getElementById('eRMS'); const eMit=document.getElementById('eMitigation'); const eSlider=document.getElementById('errorLevel');
+  let mitigationMeasurement={effectiveness:0};
+
+  function generateError(size=200){
+    const lvl=parseFloat(eSlider.value); let data=[];
+    for(let i=0;i<size;i++){ data.push(Math.sin(2*Math.PI*5*i/size)+(Math.random()*2-1)*lvl); }
+    return data;
+  }
+
+  function drawError(){
+    const data=generateError();
+    eCtx.fillStyle="#12183b"; eCtx.fillRect(0,0,eCanvas.width,eCanvas.height);
+    eCtx.beginPath(); data.forEach((v,i)=>{
+      const x=i/data.length*eCanvas.width; const y=(1-(v+1)/2)*eCanvas.height; i===0?eCtx.moveTo(x,y):eCtx.lineTo(x,y);
+    }); eCtx.strokeStyle="#00ffab"; eCtx.lineWidth=2; eCtx.stroke();
+    const m=calcMetrics(data); ePeak.textContent=m.peak.toFixed(3); eRMS.textContent=m.rms.toFixed(3);
+    mitigationMeasurement.effectiveness = Math.max(0,100 - parseFloat(eSlider.value)*100); eMit.textContent=mitigationMeasurement.effectiveness.toFixed(2);
+    eAnim=requestAnimationFrame(drawError); updatePerformanceCharts();
+  }
+
+  function startError(){ if(!eAnim) drawError(); }
+  function stopError(){ cancelAnimationFrame(eAnim); eAnim=null; eCtx.clearRect(0,0,eCanvas.width,eCanvas.height); }
+
+  /*** Performance Insights Charts ***/
+  const noiseAccuracyCtx=document.getElementById('noiseAccuracyChart').getContext('2d');
+  const depthFidelityCtx=document.getElementById('depthFidelityChart').getContext('2d');
+  const mitigationCtx=document.getElementById('mitigationChart').getContext('2d');
+
+  const noiseAccuracyChart = new Chart(noiseAccuracyCtx,{
+    type:'line', data:{labels:[0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1], datasets:[{label:'Accuracy',data:[],borderColor:'#00ffab',backgroundColor:'rgba(0,255,171,0.2)',tension:0.3}]},
+    options:{responsive:true, scales:{x:{title:{display:true,text:'Noise Probability',color:'#00d4ff'},ticks:{color:'#fff'}},y:{title:{display:true,text:'Accuracy',color:'#00d4ff'},ticks:{color:'#fff'},min:0,max:1}},plugins:{legend:{labels:{color:'#00ffa5'}}}}
+  });
+
+  const depthFidelityChart = new Chart(depthFidelityCtx,{
+    type:'line', data:{labels:[2,4,6,8,10,12,14,16,18,20], datasets:[{label:'Fidelity',data:[],borderColor:'#ff6f61',backgroundColor:'rgba(255,111,97,0.2)',tension:0.3}]},
+    options:{responsive:true, scales:{x:{title:{display:true,text:'Circuit Depth',color:'#00d4ff'},ticks:{color:'#fff'}},y:{title:{display:true,text:'Fidelity',color:'#00d4ff'},ticks:{color:'#fff'},min:0,max:1}},plugins:{legend:{labels:{color:'#00ffa5'}}}}
+  });
+
+  const mitigationChart = new Chart(mitigationCtx,{
+    type:'bar', data:{labels:['QFT','Grover','VQE'], datasets:[{label:'Mitigation Effectiveness (%)',data:[0,0,0],backgroundColor:['#00ffab','#ff6f61','#ffcc00']}]},
+    options:{responsive:true, scales:{x:{ticks:{color:'#fff'}},y:{title:{display:true,text:'Effectiveness (%)',color:'#00d4ff'},ticks:{color:'#fff'},min:0,max:100}},plugins:{legend:{labels:{color:'#00ffa5'}}}}
+  });
+
+  function updatePerformanceCharts(){
+    // Noise Accuracy Chart: map RMS (0-1) to accuracy
+    noiseAccuracyChart.data.datasets[0].data = noiseAccuracyChart.data.labels.map(x=>{
+      return Math.max(0,1 - noiseMeasurement.prob*x*2).toFixed(3);
+    });
+    noiseAccuracyChart.update();
+
+    // Depth vs Fidelity: use fidelity measurement
+    depthFidelityChart.data.datasets[0].data = depthFidelityChart.data.labels.map(x=>{
+      return Math.max(0,fidelityMeasurement.fidelity - x*0.01).toFixed(3);
+    });
+    depthFidelityChart.update();
+
+    // Mitigation chart
+    mitigationChart.data.datasets[0].data = [mitigationMeasurement.effectiveness,mitigationMeasurement.effectiveness,mitigationMeasurement.effectiveness];
+    mitigationChart.update();
+  }
+</script>
+
+</body>
+</html>

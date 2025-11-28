@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quantum Hardware Optimization</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f6f8;
+      color: #333;
+    }
+    header {
+      background-color: #1a237e;
+      color: #fff;
+      padding: 40px 20px;
+      text-align: center;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 2.5rem;
+    }
+    header p {
+      font-size: 1.1rem;
+      margin-top: 10px;
+    }
+    nav {
+      background-color: #303f9f;
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    nav a {
+      color: white;
+      text-decoration: none;
+      padding: 15px 25px;
+      display: block;
+    }
+    nav a:hover {
+      background-color: #3f51b5;
+    }
+    section {
+      padding: 50px 20px;
+      max-width: 1200px;
+      margin: auto;
+    }
+    section h2 {
+      font-size: 2rem;
+      margin-bottom: 20px;
+      color: #1a237e;
+    }
+    section p {
+      font-size: 1rem;
+      line-height: 1.6;
+      margin-bottom: 20px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 30px;
+    }
+    .card {
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      transition: transform 0.3s;
+    }
+    .card:hover {
+      transform: translateY(-5px);
+    }
+    footer {
+      background-color: #1a237e;
+      color: #fff;
+      text-align: center;
+      padding: 20px;
+    }
+    footer a {
+      color: #ffeb3b;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Quantum Hardware Optimization</h1>
+  <p>Inform better quantum hardware design decisions and circuit compilation strategies based on noise characteristics</p>
+</header>
+
+<nav>
+  <a href="#importance">Importance</a>
+  <a href="#hardware">Hardware Parameters</a>
+  <a href="#compilation">Noise-Aware Compilation</a>
+  <a href="#practical">Practical Recommendations</a>
+  <a href="#outlook">Future Outlook</a>
+</nav>
+
+<section id="importance">
+  <h2>Why Noise-Aware Design & Compilation Matters</h2>
+  <p>Quantum devices, especially in the NISQ era, suffer from noise, decoherence, gate errors, and limited connectivity. These errors accumulate with larger circuits, reducing fidelity. Noise-aware design and compilation ensure that quantum circuits run efficiently and reliably, tailored to the actual hardware characteristics.</p>
+</section>
+
+<section id="hardware">
+  <h2>Key Hardware & Noise Parameters</h2>
+  <div class="grid">
+    <div class="card">
+      <h3>Coherence Times (T1, T2)</h3>
+      <p>Longer coherence allows circuits to execute before decoherence erases quantum information. Short coherence requires shallow circuits.</p>
+    </div>
+    <div class="card">
+      <h3>Gate Error Rates</h3>
+      <p>High two-qubit gate errors reduce fidelity. Minimizing noisy gates is crucial.</p>
+    </div>
+    <div class="card">
+      <h3>Connectivity / Topology</h3>
+      <p>Limited qubit connectivity forces extra SWAP operations, increasing noise exposure.</p>
+    </div>
+    <div class="card">
+      <h3>Native Gate Set</h3>
+      <p>Efficient native gates reduce decomposition overhead and minimize total error.</p>
+    </div>
+    <div class="card">
+      <h3>Calibration & Stability</h3>
+      <p>Noise parameters drift over time. Regular calibration ensures consistent performance.</p>
+    </div>
+  </div>
+</section>
+
+<section id="compilation">
+  <h2>Noise-Aware Compilation & Mapping</h2>
+  <p>Modern quantum compilers use noise and calibration data to optimize circuit mapping and routing. Techniques include:</p>
+  <ul>
+    <li><strong>Noise-adaptive mapping:</strong> Choose qubits with lower error and higher coherence.</li>
+    <li><strong>Topology-aware routing:</strong> Reduce SWAPs and avoid high-error paths.</li>
+    <li><strong>Circuit depth minimization:</strong> Transform circuits to shallower, less error-prone forms.</li>
+    <li><strong>Dynamic scheduling:</strong> Adapt compilation to daily calibration and noise data.</li>
+  </ul>
+</section>
+
+<section id="practical">
+  <h2>Practical Recommendations</h2>
+  <ul>
+    <li>Use detailed calibration data for compiler optimization.</li>
+    <li>Design hardware with sufficient connectivity and low-error gates.</li>
+    <li>Implement noise-aware routing and mapping algorithms.</li>
+    <li>Co-design hardware, compiler, and algorithms for best results.</li>
+    <li>Regularly recompile circuits to adapt to changing noise.</li>
+    <li>Minimize two-qubit gates and circuit depth wherever possible.</li>
+  </ul>
+</section>
+
+<section id="outlook">
+  <h2>Future Outlook</h2>
+  <p>Noise-aware hardware and compilation strategies are critical for NISQ-era devices and will continue to be important as quantum computers scale. By integrating hardware design and software compilation, we can achieve higher fidelity and more reliable quantum computations, even before full fault tolerance is reached.</p>
+</section>
+
+<footer>
+  <p>© 2025 Quantum Optimization. Learn more at <a href="#">www.quantumoptimize.com</a></p>
+</footer>
+
+</body>
+</html>

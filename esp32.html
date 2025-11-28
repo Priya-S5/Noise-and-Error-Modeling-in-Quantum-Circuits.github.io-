@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ESP32 Microphone Streaming Project</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f9;
+      margin: 0;
+      padding: 0;
+      color: #333;
+    }
+    header {
+      background: #2929bc;
+      color: white;
+      padding: 1rem;
+      text-align: center;
+    }
+    .container {
+      max-width: 900px;
+      margin: 2rem auto;
+      background: white;
+      padding: 2rem;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      border-radius: 10px;
+    }
+    h2 {
+      color:#2929bc;
+      margin-top: 1.5rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+    }
+    table, th, td {
+      border: 1px solid #ddd;
+    }
+    th, td {
+      padding: 0.75rem;
+      text-align: center;
+    }
+    th {
+      background: #f4f4f4;
+    }
+    img {
+      max-width: 100%;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      margin-top: 1rem;
+    }
+    code {
+      background: #f4f4f4;
+      padding: 0.2rem 0.4rem;
+      border-radius: 4px;
+      font-family: monospace;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>ESP32 Microphone Streaming Project</h1>
+</header>
+
+<div class="container">
+  <h2>Project Overview</h2>
+  <p>This project demonstrates real-time audio streaming from a microphone to an ESP32 board and visualizing the audio data on a web interface. It is ideal for IoT audio monitoring, sound detection, and experimentation with streaming data.</p>
+
+  <h2>Hardware Components</h2>
+  <ul>
+    <li>ESP32 Dev Board</li>
+    <li>Microphone Module (MAX9814 or KY-037)</li>
+    <li>Breadboard and Jumper Wires</li>
+    <li>Power Source (USB or Li-ion battery)</li>
+    <li>Optional: Capacitor 0.1µF for noise filtering</li>
+  </ul>
+
+  <h2>Wiring Connections</h2>
+  <table>
+    <tr>
+      <th>Microphone Pin</th>
+      <th>ESP32 Pin</th>
+      <th>Notes</th>
+    </tr>
+    <tr>
+      <td>VCC</td>
+      <td>3.3V</td>
+      <td>Power supply</td>
+    </tr>
+    <tr>
+      <td>GND</td>
+      <td>GND</td>
+      <td>Ground</td>
+    </tr>
+    <tr>
+      <td>OUT / A0</td>
+      <td>GPIO 34 (ADC)</td>
+      <td>Analog input for audio</td>
+    </tr>
+    <tr>
+      <td>GAIN (Optional)</td>
+      <td>Adjust as per module</td>
+      <td>Optional gain adjustment</td>
+    </tr>
+  </table>
+
+  <h2>Fritzing Schematic</h2>
+  <p>Below is the schematic layout for your project. You can open this in Fritzing for modifications.</p>
+  <img src="fritzing_schematic.png" alt="Fritzing schematic placeholder">
+
+  <h2>Getting Started</h2>
+  <p>Upload the ESP32 code using Arduino IDE or PlatformIO. Connect your ESP32 to Wi-Fi and access the streaming interface via a browser.</p>
+  <pre><code>// Example Arduino snippet
+#include &lt;WiFi.h&gt;
+#include &lt;ESPAsyncWebServer.h&gt;
+
+const char* ssid = "YOUR_SSID";
+const char* password = "YOUR_PASSWORD";
+
+void setup() {
+  Serial.begin(115200);
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("Connected!");
+}
+
+void loop() {
+  // Audio reading and streaming code
+}
+</code></pre>
+</div>
+
+</body>
+</html>

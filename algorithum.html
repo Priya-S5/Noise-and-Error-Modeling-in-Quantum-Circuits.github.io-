@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quantum Algorithm Benchmarking</title>
+<style>
+  body { margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0a0e27; color: #fff; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+  header { background-color: #12183b; width: 100%; text-align: center; font-size: 28px; font-weight: bold; color: #00d4ff; padding: 15px 0; box-shadow: 0 3px 12px rgba(0,0,0,0.5); }
+  .tabs { display: flex; justify-content: center; gap: 10px; margin: 20px 0; flex-wrap: wrap; }
+  .tab-btn { padding: 10px 25px; background-color: #00d4ff; color: #0a0e27; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+  .tab-btn:hover { background-color: #00ffa5; }
+  .tab-btn.active { background-color: #00ffa5; }
+  .module { display: none; max-width: 1200px; width: 100%; padding: 20px; flex-direction: column; align-items: center; }
+  .module.active { display: flex; }
+  canvas { border: 2px solid #00d4ff; border-radius: 10px; background-color: #12183b; margin-bottom: 15px; }
+  .controls { display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; margin-top: 10px; }
+  button, input[type=range] { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; }
+  button { background-color: #00d4ff; font-weight: bold; color: #0a0e27; transition: 0.3s; }
+  button:hover { background-color: #00ffa5; }
+  input[type=range] { width: 150px; }
+  .measurements { display: flex; flex-direction: column; gap: 12px; padding: 15px; background: #12183b; border-radius: 10px; width: 300px; margin-top: 15px; }
+  .measurement-item { display: flex; justify-content: space-between; padding: 6px 12px; background: #0f1430; border-radius: 6px; }
+  .measurement-item span { font-weight: bold; color: #00ffa5; }
+</style>
+</head>
+<body>
+
+<header>Quantum Algorithm Benchmarking</header>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="showModule('qftModule')">QFT</button>
+  <button class="tab-btn" onclick="showModule('groverModule')">Grover's</button>
+  <button class="tab-btn" onclick="showModule('vqeModule')">VQE</button>
+</div>
+
+<!-- QFT Module -->
+<div id="qftModule" class="module active">
+  <h2>Quantum Fourier Transform (QFT)</h2>
+  <canvas id="qftCanvas" width="800" height="250"></canvas>
+  <div class="controls">
+    <button onclick="startQFT()">Start</button>
+    <button onclick="stopQFT()">Stop</button>
+    <div><label for="qftNoise">Noise Level</label><input type="range" id="qftNoise" min="0" max="0.5" step="0.01" value="0.05"></div>
+  </div>
+  <div class="measurements">
+    <div class="measurement-item">Fidelity: <span id="qftFidelity">0</span></div>
+    <div class="measurement-item">Error Rate: <span id="qftError">0</span></div>
+    <div class="measurement-item">Success Probability: <span id="qftSuccess">0</span></div>
+  </div>
+</div>
+
+<!-- Grover's Module -->
+<div id="groverModule" class="module">
+  <h2>Grover's Algorithm</h2>
+  <canvas id="groverCanvas" width="800" height="250"></canvas>
+  <div class="controls">
+    <button onclick="startGrover()">Start</button>
+    <button onclick="stopGrover()">Stop</button>
+    <div><label for="groverNoise">Noise Level</label><input type="range" id="groverNoise" min="0" max="0.5" step="0.01" value="0.05"></div>
+  </div>
+  <div class="measurements">
+    <div class="measurement-item">Fidelity: <span id="groverFidelity">0</span></div>
+    <div class="measurement-item">Error Rate: <span id="groverError">0</span></div>
+    <div class="measurement-item">Success Probability: <span id="groverSuccess">0</span></div>
+  </div>
+</div>
+
+<!-- VQE Module -->
+<div id="vqeModule" class="module">
+  <h2>Variational Quantum Eigensolver (VQE)</h2>
+  <canvas id="vqeCanvas" width="800" height="250"></canvas>
+  <div class="controls">
+    <button onclick="startVQE()">Start</button>
+    <button onclick="stopVQE()">Stop</button>
+    <div><label for="vqeNoise">Noise Level</label><input type="range" id="vqeNoise" min="0" max="0.5" step="0.01" value="0.05"></div>
+  </div>
+  <div class="measurements">
+    <div class="measurement-item">Energy Error: <span id="vqeEnergy">0</span></div>
+    <div class="measurement-item">Fidelity: <span id="vqeFidelity">0</span></div>
+    <div class="measurement-item">Convergence Rate: <span id="vqeConvergence">0</span></div>
+  </div>
+</div>
+
+<script>
+  // Tab switching
+  function showModule(moduleId) {
+    const modules = document.querySelectorAll('.module'); modules.forEach(m => m.classList.remove('active'));
+    document.getElementById(moduleId).classList.add('active');
+    const buttons = document.querySelectorAll('.tab-btn'); buttons.forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
+  }
+
+  /* ---------------- QFT Simulation ---------------- */
+  const qftCanvas = document.getElementById('qftCanvas'); const qCtx = qftCanvas.getContext('2d'); let qAnimId = null;
+  const qFid = document.getElementById('qftFidelity'); const qErr = document.getElementById('qftError'); const qSucc = document.getElementById('qftSuccess'); const qNoise = document.getElementById('qftNoise');
+
+  function generateQFT(size=200){
+    const noise = parseFloat(qNoise.value);
+    return Array.from({length:size}, () => Math.sin(Math.random()*Math.PI*2) + (Math.random()*2-1)*noise);
+  }
+
+  function calculateQFTMetrics(data){
+    const fidelity = (Math.random()*(1-0.8)+0.8).toFixed(3); // simulated metric
+    const error = (Math.random()*0.05).toFixed(3);
+    const success = (Math.random()*(1-0.9)+0.9).toFixed(3);
+    return { fidelity, error, success };
+  }
+
+  function drawQFT(){
+    const data = generateQFT();
+    qCtx.fillStyle = '#12183b'; qCtx.fillRect(0,0,qftCanvas.width,qftCanvas.height);
+    qCtx.beginPath(); data.forEach((v,i)=>{ const x=i/data.length*qftCanvas.width; const y=(1-(v+1)/2)*qftCanvas.height; i===0?qCtx.moveTo(x,y):qCtx.lineTo(x,y); });
+    qCtx.strokeStyle = '#00ffab'; qCtx.lineWidth=2; qCtx.stroke();
+    const m = calculateQFTMetrics(data); qFid.textContent=m.fidelity; qErr.textContent=m.error; qSucc.textContent=m.success;
+    qAnimId = requestAnimationFrame(drawQFT);
+  }
+
+  function startQFT(){ if(!qAnimId) drawQFT(); }
+  function stopQFT(){ cancelAnimationFrame(qAnimId); qAnimId=null; qCtx.clearRect(0,0,qftCanvas.width,qftCanvas.height); }
+
+  /* ---------------- Grover Simulation ---------------- */
+  const groverCanvas = document.getElementById('groverCanvas'); const gCtx = groverCanvas.getContext('2d'); let gAnimId=null;
+  const gFid=document.getElementById('groverFidelity'); const gErr=document.getElementById('groverError'); const gSucc=document.getElementById('groverSuccess'); const gNoise=document.getElementById('groverNoise');
+
+  function generateGrover(size=200){ const noise=parseFloat(gNoise.value); return Array.from({length:size}, ()=>Math.cos(Math.random()*Math.PI*2)+(Math.random()*2-1)*noise); }
+  function calculateGroverMetrics(data){ const fidelity=(Math.random()*(1-0.8)+0.8).toFixed(3); const error=(Math.random()*0.05).toFixed(3); const success=(Math.random()*(1-0.9)+0.9).toFixed(3); return {fidelity,error,success}; }
+  function drawGrover(){ const data=generateGrover(); gCtx.fillStyle='#12183b'; gCtx.fillRect(0,0,groverCanvas.width,groverCanvas.height); gCtx.beginPath(); data.forEach((v,i)=>{ const x=i/data.length*groverCanvas.width; const y=(1-(v+1)/2)*groverCanvas.height; i===0?gCtx.moveTo(x,y):gCtx.lineTo(x,y); }); gCtx.strokeStyle='#00ffab'; gCtx.lineWidth=2; gCtx.stroke(); const m=calculateGroverMetrics(data); gFid.textContent=m.fidelity; gErr.textContent=m.error; gSucc.textContent=m.success; gAnimId=requestAnimationFrame(drawGrover); }
+  function startGrover(){ if(!gAnimId) drawGrover(); } function stopGrover(){ cancelAnimationFrame(gAnimId); gAnimId=null; gCtx.clearRect(0,0,groverCanvas.width,groverCanvas.height); }
+
+  /* ---------------- VQE Simulation ---------------- */
+  const vqeCanvas = document.getElementById('vqeCanvas'); const vCtx = vqeCanvas.getContext('2d'); let vAnimId=null;
+  const vEnergy=document.getElementById('vqeEnergy'); const vFid=document.getElementById('vqeFidelity'); const vConv=document.getElementById('vqeConvergence'); const vNoise=document.getElementById('vqeNoise');
+
+  function generateVQE(size=200){ const noise=parseFloat(vNoise.value); return Array.from({length:size},()=>Math.sin(Math.random()*Math.PI*4)+(Math.random()*2-1)*noise); }
+  function calculateVQEMetrics(data){ const energy=(Math.random()*0.1).toFixed(3); const fidelity=(Math.random()*(1-0.85)+0.85).toFixed(3); const convergence=(Math.random()*0.05+0.95).toFixed(3); return {energy,fidelity,convergence}; }
+  function drawVQE(){ const data=generateVQE(); vCtx.fillStyle='#12183b'; vCtx.fillRect(0,0,vqeCanvas.width,vqeCanvas.height); vCtx.beginPath(); data.forEach((v,i)=>{ const x=i/data.length*vqeCanvas.width; const y=(1-(v+1)/2)*vqeCanvas.height; i===0?vCtx.moveTo(x,y):vCtx.lineTo(x,y); }); vCtx.strokeStyle='#00ffab'; vCtx.lineWidth=2; vCtx.stroke(); const m=calculateVQEMetrics(data); vEnergy.textContent=m.energy; vFid.textContent=m.fidelity; vConv.textContent=m.convergence; vAnimId=requestAnimationFrame(drawVQE); }
+  function startVQE(){ if(!vAnimId) drawVQE(); } function stopVQE(){ cancelAnimationFrame(vAnimId); vAnimId=null; vCtx.clearRect(0,0,vqeCanvas.width,vqeCanvas.height); }
+
+</script>
+
+</body>
+</html>
