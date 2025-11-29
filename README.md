@@ -1,4 +1,5 @@
 # ⭐ **README.md — Quantum-Inspired Wave Noise Modeling & Error Mitigation Visualizer**
+https://priya-s5.github.io/Noise-and-Error-Modeling-in-Quantum-Circuits.github.io-/
 
 ## 🚀 Project Overview
 
@@ -223,3 +224,4 @@ This project is a complete, interactive, quantum-inspired noise modeling system.
 It is ideal for academic presentations, research-oriented projects, and interviews.
 
 ---
+
